@@ -112,7 +112,7 @@ class BaseTokenizer(abc.ABC):
         return self.sep.join(self._id2token[t] for t in tokens if t not in self._util_ids)
 
 
-class EnglishCharsTokenizer(BaseTokenizer):
+class BaseCharsTokenizer(BaseTokenizer):
     # fmt: off
     PUNCT_LIST = (  # Derived from LJSpeech and "/" additionally
         ',', '.', '!', '?', '-',
@@ -123,16 +123,18 @@ class EnglishCharsTokenizer(BaseTokenizer):
 
     def __init__(
         self,
+        chars,
         punct=True,
         apostrophe=True,
         add_blank_at=None,
         pad_with_space=False,
         non_default_punct_list=None,
-        text_preprocessing_func=english_text_preprocessing,
-        word_tokenize_func=english_word_tokenize,
+        text_preprocessing_func=lambda x: x,
+        word_tokenize_func=lambda x: x,
     ):
-        """English char-based tokenizer.
+        """Base class for char-based tokenizer.
         Args:
+            chars: string that represents all possible characters.
             punct: Whether to reserve grapheme for basic punctuation or not.
             apostrophe: Whether to use apostrophe or not.
             add_blank_at: Add blank to labels in the specified order ("last") or after tokens (any non None),
@@ -145,7 +147,7 @@ class EnglishCharsTokenizer(BaseTokenizer):
 
         tokens = []
         self.space, tokens = len(tokens), tokens + [' ']  # Space
-        tokens.extend(string.ascii_lowercase)
+        tokens.extend(chars)
         if apostrophe:
             tokens.append("'")  # Apostrophe for saving "don't" and "Joe's"
 
@@ -189,6 +191,84 @@ class EnglishCharsTokenizer(BaseTokenizer):
             cs = [space] + cs + [space]
 
         return [self._token2id[p] for p in cs]
+
+
+class EnglishCharsTokenizer(BaseCharsTokenizer):
+    def __init__(
+        self,
+        punct=True,
+        apostrophe=True,
+        add_blank_at=None,
+        pad_with_space=False,
+        non_default_punct_list=None,
+        text_preprocessing_func=english_text_preprocessing,
+        word_tokenize_func=english_word_tokenize,
+    ):
+        """English char-based tokenizer.
+        Args:
+            punct: Whether to reserve grapheme for basic punctuation or not.
+            apostrophe: Whether to use apostrophe or not.
+            add_blank_at: Add blank to labels in the specified order ("last") or after tokens (any non None),
+             if None then no blank in labels.
+            pad_with_space: Whether to pad text with spaces at the beginning and at the end or not.
+            non_default_punct_list: List of punctuation marks which will be used instead default.
+            text_preprocessing_func: Function for preprocessing raw text.
+            word_tokenize_func: Function for tokenizing text to words.
+        """
+        super().__init__(
+            chars=string.ascii_lowercase,
+            punct=punct,
+            apostrophe=apostrophe,
+            add_blank_at=add_blank_at,
+            pad_with_space=pad_with_space,
+            non_default_punct_list=non_default_punct_list,
+            text_preprocessing_func=text_preprocessing_func,
+            word_tokenize_func=word_tokenize_func,
+        )
+
+
+class DeutschCharsTokenizer(BaseCharsTokenizer):
+    # fmt: off
+    PUNCT_LIST = (  # Derived from LJSpeech and "/" additionally
+        ',', '.', '!', '?', '-',
+        ':', ';', '/', '"', '(',
+        ')', '[', ']', '{', '}',
+    )
+    # fmt: on
+
+    def __init__(
+        self,
+        punct=True,
+        apostrophe=True,
+        add_blank_at=None,
+        pad_with_space=False,
+        non_default_punct_list=None,
+        text_preprocessing_func=lambda x: x,
+        word_tokenize_func=lambda x: x,
+    ):
+        """Deutsch char-based tokenizer.
+        Args:
+            punct: Whether to reserve grapheme for basic punctuation or not.
+            apostrophe: Whether to use apostrophe or not.
+            add_blank_at: Add blank to labels in the specified order ("last") or after tokens (any non None),
+             if None then no blank in labels.
+            pad_with_space: Whether to pad text with spaces at the beginning and at the end or not.
+            non_default_punct_list: List of punctuation marks which will be used instead default.
+            text_preprocessing_func: Function for preprocessing raw text.
+            word_tokenize_func: Function for tokenizing text to words.
+        """
+
+        de_alphabet = "abcdefghijklmnopqrstuvwxyzäöüß"
+        super().__init__(
+            chars=de_alphabet,
+            punct=punct,
+            apostrophe=apostrophe,
+            add_blank_at=add_blank_at,
+            pad_with_space=pad_with_space,
+            non_default_punct_list=non_default_punct_list,
+            text_preprocessing_func=text_preprocessing_func,
+            word_tokenize_func=word_tokenize_func,
+        )
 
 
 class EnglishPhonemesTokenizer(BaseTokenizer):
