@@ -44,7 +44,7 @@ from nemo.core.neural_types.elements import (
     MelSpectrogramType,
     ProbsType,
     RegressionValuesType,
-    TokenIndex,
+    TokenIndex, TokenDurationType, TokenLogDurationType, LogprobsType,
 )
 from nemo.core.neural_types.neural_type import NeuralType
 from nemo.utils import logging
@@ -213,6 +213,16 @@ class MixerTTSModel(SpectrogramGenerator, Exportable):
             "spect_len": NeuralType(('B'), LengthsType(), optional=True),
             "attn_prior": NeuralType(('B', 'T', 'T'), ProbsType(), optional=True),
             "lm_tokens": NeuralType(('B', 'T'), TokenIndex(), optional=True),
+        },
+        output_types={
+            "pred_spect": NeuralType(('B', 'T', 'D'), MelSpectrogramType()),
+            "durs_predicted": NeuralType(('B', 'T'), TokenDurationType()),
+            "log_durs_predicted": NeuralType(('B', 'T'), TokenLogDurationType()),
+            "pitch_predicted": NeuralType(('B', 'T'), RegressionValuesType()),
+            "attn_soft": NeuralType(('B', 'S', 'T', 'D'), ProbsType()),
+            "attn_logprob": NeuralType(('B', 'S', 'T', 'D'), LogprobsType()),
+            "attn_hard": NeuralType(('B', 'S', 'T', 'D'), ProbsType()),
+            "attn_hard_dur": NeuralType(('B', 'T'), TokenDurationType()),
         }
     )
     def forward(self, text, text_len, pitch=None, spect=None, spect_len=None, attn_prior=None, lm_tokens=None):
