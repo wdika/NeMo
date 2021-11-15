@@ -204,25 +204,26 @@ class MixerTTSModel(SpectrogramGenerator, Exportable):
         assert torch.all(torch.eq(attn_hard_dur.sum(dim=1), spect_len))
         return attn_soft, attn_logprob, attn_hard, attn_hard_dur
 
+    # T1 - text length, T2 - audio length, T3 - spectrogram length, T4 - lm_tokens length
     @typecheck(
         input_types={
-            "text": NeuralType(('B', 'T'), TokenIndex()),
-            "text_len": NeuralType(('B'), LengthsType()),
-            "pitch": NeuralType(('B', 'T'), RegressionValuesType(), optional=True),
-            "spect": NeuralType(('B', 'D', 'T'), MelSpectrogramType(), optional=True),
-            "spect_len": NeuralType(('B'), LengthsType(), optional=True),
-            "attn_prior": NeuralType(('B', 'T', 'T'), ProbsType(), optional=True),
-            "lm_tokens": NeuralType(('B', 'T'), TokenIndex(), optional=True),
+            "text": NeuralType(('B', 'T1'), TokenIndex()),
+            "text_len": NeuralType(('B', ), LengthsType()),
+            "pitch": NeuralType(('B', 'T2'), RegressionValuesType(), optional=True),
+            "spect": NeuralType(('B', 'D', 'T3'), MelSpectrogramType(), optional=True),
+            "spect_len": NeuralType(('B', ), LengthsType(), optional=True),
+            "attn_prior": NeuralType(('B', 'T3', 'T1'), ProbsType(), optional=True),
+            "lm_tokens": NeuralType(('B', 'T4'), TokenIndex(), optional=True),
         },
         output_types={
-            "pred_spect": NeuralType(('B', 'T', 'D'), MelSpectrogramType()),
-            "durs_predicted": NeuralType(('B', 'T'), TokenDurationType()),
-            "log_durs_predicted": NeuralType(('B', 'T'), TokenLogDurationType()),
-            "pitch_predicted": NeuralType(('B', 'T'), RegressionValuesType()),
-            "attn_soft": NeuralType(('B', 'S', 'T', 'D'), ProbsType()),
-            "attn_logprob": NeuralType(('B', 'S', 'T', 'D'), LogprobsType()),
-            "attn_hard": NeuralType(('B', 'S', 'T', 'D'), ProbsType()),
-            "attn_hard_dur": NeuralType(('B', 'T'), TokenDurationType()),
+            "pred_spect": NeuralType(('B', 'D', 'T3'), MelSpectrogramType()),
+            "durs_predicted": NeuralType(('B', 'T1'), TokenDurationType()),
+            "log_durs_predicted": NeuralType(('B', 'T1'), TokenLogDurationType()),
+            "pitch_predicted": NeuralType(('B', 'T1'), RegressionValuesType()),
+            "attn_soft": NeuralType(('B', 'S', 'T3', 'T1'), ProbsType()),
+            "attn_logprob": NeuralType(('B', 'S', 'T3', 'T1'), LogprobsType()),
+            "attn_hard": NeuralType(('B', 'S', 'T3', 'T1'), ProbsType()),
+            "attn_hard_dur": NeuralType(('B', 'T1'), TokenDurationType()),
         }
     )
     def forward(self, text, text_len, pitch=None, spect=None, spect_len=None, attn_prior=None, lm_tokens=None):
@@ -527,9 +528,9 @@ class MixerTTSModel(SpectrogramGenerator, Exportable):
 
     @typecheck(
         input_types={
-            "text": NeuralType(('B', 'T'), TokenIndex(), optional=True),
-            "text_len": NeuralType(('B'), LengthsType(), optional=True),
-            "lm_tokens": NeuralType(('B', 'T'), TokenIndex(), optional=True),
+            "text": NeuralType(('B', 'T1'), TokenIndex(), optional=True),
+            "text_len": NeuralType(('B', ), LengthsType(), optional=True),
+            "lm_tokens": NeuralType(('B', 'T2'), TokenIndex(), optional=True),
             "raw_texts": NeuralType(optional=True),
             "lm_model": NeuralType(optional=True),
         }
@@ -628,17 +629,17 @@ class MixerTTSModel(SpectrogramGenerator, Exportable):
     @property
     def input_types(self):
         return {
-            "text": NeuralType(('B', 'T'), TokenIndex()),
-            "lm_tokens": NeuralType(('B', 'T'), TokenIndex(), optional=True),
+            "text": NeuralType(('B', 'T1'), TokenIndex()),
+            "lm_tokens": NeuralType(('B', 'T2'), TokenIndex(), optional=True),
         }
 
     @property
     def output_types(self):
         return {
-            "spect": NeuralType(('B', 'D', 'T'), MelSpectrogramType()),
+            "spect": NeuralType(('B', 'D', 'T3'), MelSpectrogramType()),
         }
 
     def forward_for_export(self, text, lm_tokens=None):
         text_mask = (text != self.tokenizer_pad).unsqueeze(2)
-        spect = self.infer(text=text, text_mask=text_mask, lm_tokens=lm_tokens)
+        spect = self.infer(text=text, text_mask=text_mask, lm_tokens=lm_tokens).transpose(1, 2)
         return spect.to(torch.float)
