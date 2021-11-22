@@ -41,10 +41,13 @@ from nemo.core import Exportable
 from nemo.core.classes.common import typecheck
 from nemo.core.neural_types.elements import (
     LengthsType,
+    LogprobsType,
     MelSpectrogramType,
     ProbsType,
     RegressionValuesType,
-    TokenIndex, TokenDurationType, TokenLogDurationType, LogprobsType,
+    TokenDurationType,
+    TokenIndex,
+    TokenLogDurationType,
 )
 from nemo.core.neural_types.neural_type import NeuralType
 from nemo.utils import logging
@@ -208,10 +211,10 @@ class MixerTTSModel(SpectrogramGenerator, Exportable):
     @typecheck(
         input_types={
             "text": NeuralType(('B', 'T1'), TokenIndex()),
-            "text_len": NeuralType(('B', ), LengthsType()),
+            "text_len": NeuralType(('B',), LengthsType()),
             "pitch": NeuralType(('B', 'T2'), RegressionValuesType(), optional=True),
             "spect": NeuralType(('B', 'D', 'T3'), MelSpectrogramType(), optional=True),
-            "spect_len": NeuralType(('B', ), LengthsType(), optional=True),
+            "spect_len": NeuralType(('B',), LengthsType(), optional=True),
             "attn_prior": NeuralType(('B', 'T3', 'T1'), ProbsType(), optional=True),
             "lm_tokens": NeuralType(('B', 'T4'), TokenIndex(), optional=True),
         },
@@ -224,7 +227,7 @@ class MixerTTSModel(SpectrogramGenerator, Exportable):
             "attn_logprob": NeuralType(('B', 'S', 'T3', 'T1'), LogprobsType()),
             "attn_hard": NeuralType(('B', 'S', 'T3', 'T1'), ProbsType()),
             "attn_hard_dur": NeuralType(('B', 'T1'), TokenDurationType()),
-        }
+        },
     )
     def forward(self, text, text_len, pitch=None, spect=None, spect_len=None, attn_prior=None, lm_tokens=None):
         if self.training:
@@ -529,7 +532,7 @@ class MixerTTSModel(SpectrogramGenerator, Exportable):
     @typecheck(
         input_types={
             "text": NeuralType(('B', 'T1'), TokenIndex(), optional=True),
-            "text_len": NeuralType(('B', ), LengthsType(), optional=True),
+            "text_len": NeuralType(('B',), LengthsType(), optional=True),
             "lm_tokens": NeuralType(('B', 'T2'), TokenIndex(), optional=True),
             "raw_texts": NeuralType(optional=True),
             "lm_model": NeuralType(optional=True),
