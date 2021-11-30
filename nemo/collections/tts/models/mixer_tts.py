@@ -529,15 +529,16 @@ class MixerTTSModel(SpectrogramGenerator, Exportable):
 
             self.logger.experiment.log({"specs": specs, "pitches": pitches})
 
-    @typecheck(
-        input_types={
-            "text": NeuralType(('B', 'T1'), TokenIndex(), optional=True),
-            "text_len": NeuralType(('B',), LengthsType(), optional=True),
-            "lm_tokens": NeuralType(('B', 'T2'), TokenIndex(), optional=True),
-            "raw_texts": NeuralType(optional=True),
-            "lm_model": NeuralType(optional=True),
-        }
-    )
+    # TODO(oktai15): need to fix raw_texts
+    # @typecheck(
+    #     input_types={
+    #         "text": NeuralType(('B', 'T1'), TokenIndex(), optional=True),
+    #         "text_len": NeuralType(('B',), LengthsType(), optional=True),
+    #         "lm_tokens": NeuralType(('B', 'T2'), TokenIndex(), optional=True),
+    #         "raw_texts": NeuralType(["any"], optional=True),
+    #         "lm_model": NeuralType(optional=True),
+    #     }
+    # )
     def generate_spectrogram(
         self,
         tokens: Optional[torch.Tensor] = None,

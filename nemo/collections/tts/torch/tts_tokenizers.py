@@ -14,51 +14,10 @@
 
 import abc
 import itertools
-import re
 import string
-import unicodedata
-from builtins import str as unicode
 from typing import List
 
-# Example of parsing by groups via _words_re.
-# Groups:
-# 1st group -- valid english words,
-# 2nd group -- any substring starts from | to | (mustn't be nested), useful when you want to leave sequence unchanged,
-# 3rd group -- punctuation marks.
-# Text (first line) and mask of groups for every char (second line).
-# config file must contain |EY1 EY1|, B, C, D, E, F, and G.
-# 111111311113111131111111322222222233133133133133133111313
-_words_re = re.compile("([a-zA-Z]+(?:[a-zA-Z-']*[a-zA-Z]+)*)|(\|[^|]*\|)|([^a-zA-Z|]+)")
-
-
-def english_text_preprocessing(text):
-    text = unicode(text)
-    text = ''.join(char for char in unicodedata.normalize('NFD', text) if unicodedata.category(char) != 'Mn')
-    return text
-
-
-def english_word_tokenize(text):
-    """
-    Convert text (str) to List[Tuple[Union[str, List[str]], bool]] where every tuple denotes word representation and flag whether to leave unchanged or not.
-    Word can be one of: valid english word, any substring starts from | to | (unchangeable word) or punctuation marks.
-    This function expects that unchangeable word is carefully divided by spaces (e.g. HH AH L OW).
-    Unchangeable word will be splitted by space and represented as List[str], other cases are represented as str.
-    """
-    words = _words_re.findall(text)
-    result = []
-    for word in words:
-        maybe_word, maybe_without_changes, maybe_punct = word
-
-        if maybe_word != '':
-            without_changes = False
-            result.append((maybe_word.lower(), without_changes))
-        elif maybe_punct != '':
-            without_changes = False
-            result.append((re.sub(r'\s(\d)', r'\1', maybe_punct.upper()), without_changes))
-        elif maybe_without_changes != '':
-            without_changes = True
-            result.append((maybe_without_changes[1:-1].split(" "), without_changes))
-    return result
+from nemo.collections.tts.torch.en_utils import english_text_preprocessing, english_word_tokenize
 
 
 class BaseTokenizer(abc.ABC):
